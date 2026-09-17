@@ -11,6 +11,9 @@ plugins {
 group = "com.xmitya.quicker"
 version = providers.gradleProperty("pluginVersion").get()
 
+/** Claimed compatibility floor, shared by the plugin descriptor and the repository manifest. */
+val pluginSinceBuild = "252"
+
 kotlin {
     jvmToolchain(21) // 252/253/261 platform jars are Java 21 bytecode
 }
@@ -67,7 +70,7 @@ intellijPlatform {
     pluginConfiguration {
         version = providers.gradleProperty("pluginVersion")
         ideaVersion {
-            sinceBuild = "252"
+            sinceBuild = pluginSinceBuild
             untilBuild = provider { null } // explicit: no upper bound
         }
     }
@@ -134,27 +137,65 @@ val dumpEndpoints by intellijPlatformTesting.runIde.registering {
  * Writes the `updatePlugins.xml` a custom plugin repository needs, so a team can receive updates
  * through the normal plugin update flow instead of passing a zip around.
  *
+ * Name, vendor and description are copied out of plugin.xml rather than repeated here: the IDE
+ * renders the repository listing from this manifest alone — it only downloads the zip on install —
+ * so anything missing here shows up as a plugin with no title and no description.
+ *
  *   ./gradlew generateUpdatePluginsXml -PpluginBaseUrl=https://host/path
  */
 val generateUpdatePluginsXml by tasks.registering {
     val baseUrl = providers.gradleProperty("pluginBaseUrl")
     val pluginVersion = providers.gradleProperty("pluginVersion")
+    val descriptor = layout.projectDirectory.file("src/main/resources/META-INF/plugin.xml")
     val output = layout.buildDirectory.file("distributions/updatePlugins.xml")
+    val since = pluginSinceBuild
+    inputs.file(descriptor)
     outputs.file(output)
     doLast {
         val url = baseUrl.orNull?.trimEnd('/')
             ?: error("Pass -PpluginBaseUrl=<url of the directory holding the zip>")
         val version = pluginVersion.get()
-        output.get().asFile.writeText(
-            """
-            <plugins>
-              <plugin id="com.xmitya.quicker.endpoints" url="$url/quicker-$version.zip" version="$version">
-                <idea-version since-build="252"/>
-              </plugin>
-            </plugins>
-            """.trimIndent() + "\n"
+
+        val root = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+            .newDocumentBuilder()
+            .parse(descriptor.asFile)
+            .documentElement
+        // Direct children only: `id` and `name` also occur deeper in the descriptor.
+        fun field(tag: String): String {
+            val children = root.childNodes
+            for (i in 0 until children.length) {
+                val node = children.item(i)
+                if (node.nodeName == tag) return node.textContent.trim()
+            }
+            return ""
+        }
+
+        // Built line by line rather than from a raw string: the description is multi-line and
+        // unindented, which makes trimIndent() see a common indent of zero and strip nothing.
+        fun escape(text: String) = text
+            .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+
+        val file = output.get().asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            buildString {
+                appendLine("<plugins>")
+                appendLine(
+                    "  <plugin id=\"${escape(field("id"))}\"" +
+                        " url=\"${escape("$url/quicker-$version.zip")}\"" +
+                        " version=\"${escape(version)}\">",
+                )
+                appendLine("    <name>${escape(field("name"))}</name>")
+                appendLine("    <vendor>${escape(field("vendor"))}</vendor>")
+                appendLine("    <idea-version since-build=\"$since\"/>")
+                appendLine("    <description><![CDATA[")
+                appendLine(field("description"))
+                appendLine("    ]]></description>")
+                appendLine("  </plugin>")
+                appendLine("</plugins>")
+            },
         )
-        logger.lifecycle("Wrote " + output.get().asFile)
+        logger.lifecycle("Wrote " + file)
     }
 }
 
