@@ -1,0 +1,56 @@
+<idea-plugin>
+    <id>com.xmitya.quicker.endpoints</id>
+    <name>Quicker Endpoints</name>
+    <vendor email="xmitya@gmail.com">xmitya</vendor>
+
+    <description><![CDATA[
+      Jump straight to the controller method that serves a URL.
+      <p>
+      Paste a real URL out of a production log — <code>/api/v1/users/42/orders</code> — and it
+      resolves against the split template <code>@RequestMapping("/api/v1/users")</code> +
+      <code>@GetMapping("/{id}/orders")</code>, which plain text search can never find because the
+      full path exists nowhere in the source.
+      <p>
+      Understands constant references, string concatenation, the API-interface/implementation split
+      across modules, custom meta-annotations with <code>@AliasFor</code>, and
+      <code>@HttpExchange</code>. Java and Kotlin. No Ultimate-only dependencies.
+    ]]></description>
+
+    <!-- Java plugin: PSI, UAST, MetaAnnotationUtil, AnnotatedElementsSearch. -->
+    <depends>com.intellij.java</depends>
+    <!--
+      No <depends> on Kotlin on purpose. Kotlin support arrives at runtime for free because the
+      Kotlin plugin registers FirKotlinUastLanguagePlugin and KotlinAnnotatedElementsSearcher; we
+      reference no org.jetbrains.kotlin.* class, so there is nothing to declare optional. Where the
+      Kotlin plugin is absent, UastFacade simply has no plugin for .kt and those files are skipped.
+    -->
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="Quicker Endpoints" displayType="BALLOON"/>
+        <applicationConfigurable
+            parentId="tools"
+            id="com.xmitya.quicker.endpoints.settings"
+            displayName="Quicker Endpoints"
+            instance="com.xmitya.quicker.endpoints.settings.EndpointConfigurable"/>
+        <postStartupActivity implementation="com.xmitya.quicker.endpoints.model.EndpointStartupActivity"/>
+        <appStarter implementation="com.xmitya.quicker.endpoints.diagnostic.EndpointDumpStarter"/>
+        <searchEverywhereContributor
+            implementation="com.xmitya.quicker.endpoints.se.EndpointSearchContributorFactory"/>
+    </extensions>
+
+    <actions>
+        <action id="Quicker.GoToEndpoint"
+                class="com.xmitya.quicker.endpoints.ui.GoToEndpointAction"
+                text="Endpoint..."
+                description="Find a Spring endpoint by URL, template or fragment"
+                icon="AllIcons.Nodes.Related">
+            <add-to-group group-id="GoToTargetEx" anchor="last"/>
+            <!--
+              Verified free across every bundled keymap and every <keyboard-shortcut> declared by
+              the bundled plugins. "H" for HTTP.
+            -->
+            <keyboard-shortcut keymap="$default" first-keystroke="control alt shift H"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta alt shift H"/>
+        </action>
+    </actions>
+</idea-plugin>

@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, without the leading v (e.g. 0.2.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The tag is the source of truth for the version, so the release cannot disagree with what
+      # is inside the zip.
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: ./gradlew test --stacktrace
+
+      - name: Build plugin
+        run: ./gradlew buildPlugin -PpluginVersion=${{ steps.version.outputs.version }} --stacktrace
+
+      - name: Verify plugin
+        run: ./gradlew verifyPlugin -PpluginVersion=${{ steps.version.outputs.version }} --stacktrace
+
+      # Lets anyone add the repository under Manage Plugin Repositories and receive updates
+      # normally, instead of downloading a zip by hand each time.
+      - name: Generate custom repository manifest
+        run: |
+          ./gradlew generateUpdatePluginsXml \
+            -PpluginVersion=${{ steps.version.outputs.version }} \
+            -PpluginBaseUrl=https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}
+
+      - name: Write release notes
+        run: |
+          cat > release-notes.md <<'NOTES'
+          ### Install
+
+          **Settings → Plugins → ⚙ → Install Plugin from Disk…**, pick the zip below.
+
+          ### Or get updates automatically
+
+          Add this once under **Settings → Plugins → ⚙ → Manage Plugin Repositories…**:
+
+          ```
+          https://github.com/OWNER_REPO/releases/latest/download/updatePlugins.xml
+          ```
+
+          New versions then arrive like any other plugin update.
+          NOTES
+          sed -i "s|OWNER_REPO|${{ github.repository }}|" release-notes.md
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --notes-file release-notes.md \
+            build/distributions/quicker-${{ steps.version.outputs.version }}.zip \
+            build/distributions/updatePlugins.xml

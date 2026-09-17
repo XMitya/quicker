@@ -1,0 +1,10 @@
+.gradle/
+build/
+.intellijPlatform/
+*.iml
+.idea/
+
+# Local experiment artifacts
+.idea-backup/
+endpoints-*.tsv
+reference-*.tsv
