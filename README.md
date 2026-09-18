@@ -115,5 +115,5 @@ From then on a new version is picked up like any other plugin update: bump `plug
 `gradle.properties`, rebuild, replace both files.
 
 For a wider release, JetBrains Marketplace takes the same zip. That path additionally wants a
-`<vendor>` with a real URL, an icon, a changelog, and a clean `./gradlew verifyPlugin` run against
-every IDE version in the supported range.
+`<vendor>` with a real URL, a changelog, and a clean `./gradlew verifyPlugin` run against every IDE
+version in the supported range.
