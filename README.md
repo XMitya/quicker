@@ -114,6 +114,30 @@ file and gives colleagues the normal update flow:
 From then on a new version is picked up like any other plugin update: bump `pluginVersion` in
 `gradle.properties`, rebuild, replace both files.
 
-For a wider release, JetBrains Marketplace takes the same zip. That path additionally wants a
-`<vendor>` with a real URL, a changelog, and a clean `./gradlew verifyPlugin` run against every IDE
-version in the supported range.
+## Publishing to JetBrains Marketplace
+
+The first version has to go up by hand — Marketplace will not create a plugin from an API call.
+Log in at [plugins.jetbrains.com](https://plugins.jetbrains.com), pick **Upload plugin**, accept the
+Developer Agreement, create a vendor profile, and submit `quicker-<version>.zip`.
+
+Every later version rides the release workflow. Its publishing step skips itself while the secrets
+are missing, so tagging keeps working until you are ready to set them:
+
+| Secret | Where it comes from |
+| --- | --- |
+| `PUBLISH_TOKEN` | Marketplace profile, My Tokens. Shown once, so copy it there and then |
+| `CERTIFICATE_CHAIN` | `chain.crt`, from `openssl req -key private.pem -new -x509 -days 365` |
+| `PRIVATE_KEY` | `private.pem`, from `openssl rsa` on the key `openssl genpkey` wrote |
+| `PRIVATE_KEY_PASSWORD` | the passphrase `openssl genpkey` asked for |
+
+Marketplace only accepts signed uploads, so `signPlugin` runs on its own right before
+`publishPlugin` and writes `quicker-<version>-signed.zip`. The GitHub release keeps carrying the
+unsigned zip, which is what `updatePlugins.xml` points at.
+
+Every upload — the first one and every version after it — is reviewed by a person before it goes
+public, and Marketplace rejects a version number it has already seen.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Marketplace asks an open-source plugin for a link to its sources, which
+is this repository.

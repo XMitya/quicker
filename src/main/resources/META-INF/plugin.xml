@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.xmitya.quicker.endpoints</id>
     <name>Quicker Endpoints</name>
-    <vendor email="xmitya@gmail.com">xmitya</vendor>
+    <vendor url="https://github.com/XMitya/quicker">xmitya</vendor>
 
     <description><![CDATA[
       Jump straight to the controller method that serves a URL.
@@ -15,6 +15,21 @@
       across modules, custom meta-annotations with <code>@AliasFor</code>, and
       <code>@HttpExchange</code>. Java and Kotlin. No Ultimate-only dependencies.
     ]]></description>
+
+    <!--
+      Shown as "What's new" on the Marketplace page and in the Plugin Manager. Only the versions
+      worth a user's attention, newest first.
+    -->
+    <change-notes><![CDATA[
+      <b>0.1.3</b>
+      <ul>
+        <li>First JetBrains Marketplace release, under the MIT license.</li>
+      </ul>
+      <b>0.1.2</b>
+      <ul>
+        <li>Plugin icon.</li>
+      </ul>
+    ]]></change-notes>
 
     <!-- Java plugin: PSI, UAST, MetaAnnotationUtil, AnnotatedElementsSearch. -->
     <depends>com.intellij.java</depends>

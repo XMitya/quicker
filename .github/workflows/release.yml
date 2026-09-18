@@ -15,6 +15,13 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Job level rather than step level: a step's `if` cannot read the secrets context, but it can
+    # read this, which lets the Marketplace step skip itself until the secrets exist.
+    env:
+      PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+      CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+      PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+      PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -85,3 +92,10 @@ jobs:
             --notes-file release-notes.md \
             build/distributions/quicker-${{ steps.version.outputs.version }}.zip \
             build/distributions/updatePlugins.xml
+
+      # Marketplace refuses to create a plugin from an API call, so the very first version has to
+      # be uploaded by hand through the web form. Until that is done and the secrets are set, this
+      # step skips and the GitHub release still goes out. `signPlugin` runs on its own beforehand.
+      - name: Publish to JetBrains Marketplace
+        if: env.PUBLISH_TOKEN != ''
+        run: ./gradlew publishPlugin -PpluginVersion=${{ steps.version.outputs.version }} --stacktrace

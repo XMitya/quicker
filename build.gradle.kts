@@ -43,6 +43,22 @@ intellijPlatform {
     buildSearchableOptions = false
     instrumentCode = false
 
+    // Marketplace only accepts signed uploads. `signPlugin` runs by itself right before
+    // `publishPlugin`, and skips silently while the chain and key are absent -- so a local
+    // `buildPlugin` needs no certificate.
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
+
+    publishing {
+        // Personal access token from the Marketplace profile, My Tokens. Shown once.
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+        // No `channels`: the default one is the repository every IDE already reads. A named
+        // channel such as `eap` is a separate repository users would have to add by URL.
+    }
+
     pluginVerification {
         failureLevel = listOf(
             VerifyPluginTask.FailureLevel.COMPATIBILITY_PROBLEMS,
