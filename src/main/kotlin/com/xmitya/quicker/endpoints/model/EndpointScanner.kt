@@ -21,7 +21,7 @@ import com.xmitya.quicker.endpoints.match.HttpVerb
 import com.xmitya.quicker.endpoints.match.joinPath
 import com.xmitya.quicker.endpoints.match.parseSegments
 
-/** Builds the endpoint model from PSI. Must be called inside a read action. */
+/** Builds the endpoint model from PSI, taking its own read actions -- see [scan]. */
 class EndpointScanner(
     private val project: Project,
     /** Tests run on the EDT under the write-intent lock; see [ScanRead]. */
@@ -104,7 +104,7 @@ class EndpointScanner(
         }
     }
 
-    private fun <T> read(block: () -> T): T = reads.compute(block)
+    private fun <T> read(block: () -> T): T = reads.compute(project, block)
 
     private fun pointerTo(type: PsiClass): SmartPsiElementPointer<PsiClass> =
         pointers.createSmartPsiElementPointer(type)

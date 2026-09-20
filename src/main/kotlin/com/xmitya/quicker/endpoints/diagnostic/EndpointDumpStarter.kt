@@ -121,11 +121,13 @@ class EndpointDumpStarter : ApplicationStarter {
             diagnose(project, modules)
 
             val scanStart = System.currentTimeMillis()
-            val endpoints = ReadAction.compute<List<String>, RuntimeException> {
-                EndpointScanner(project).scan().map {
-                    val i = it.info
-                    "${i.verb}\t${i.path}\t${i.controllerSimpleName}.${i.methodName}\t${i.kind}\t${i.moduleName}"
-                }
+            // Deliberately not inside a read action: the scanner takes its own, and each of them
+            // waits for smart mode. Nested inside an outer read action that wait could never end,
+            // because leaving dumb mode needs the write lock this thread would be holding shut.
+            // The mapping below touches no PSI -- an EndpointInfo is plain data.
+            val endpoints = EndpointScanner(project).scan().map {
+                val i = it.info
+                "${i.verb}\t${i.path}\t${i.controllerSimpleName}.${i.methodName}\t${i.kind}\t${i.moduleName}"
             }
             val scanMs = System.currentTimeMillis() - scanStart
 

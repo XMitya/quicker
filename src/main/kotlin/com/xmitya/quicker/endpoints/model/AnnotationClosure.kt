@@ -74,7 +74,7 @@ class AnnotationClosure private constructor(
             // Every read action here is a pure lookup whose result is merged afterwards. A
             // write-prioritised read is cancelled and re-run, so a body that mutated shared state
             // would apply its effects twice against half-built collections.
-            val seeds = read.compute {
+            val seeds = read.compute(project) {
                 val facade = JavaPsiFacade.getInstance(project)
                 SpringAnnotations.SEEDS.mapNotNull { fqn ->
                     facade.findClass(fqn, scope)?.takeIf { it.isAnnotationType }?.let { fqn to it }
@@ -90,7 +90,7 @@ class AnnotationClosure private constructor(
             // Added to the closure but deliberately NOT walked: nothing meta-annotates @GetMapping
             // and friends, and searching the whole project for classes annotated with each of them
             // was ten full sweeps of pure waste.
-            read.compute {
+            read.compute(project) {
                 val facade = JavaPsiFacade.getInstance(project)
                 SpringAnnotations.SHORTHAND_VERBS.keys.mapNotNull { fqn ->
                     facade.findClass(fqn, scope)?.let { fqn to it }
@@ -110,7 +110,7 @@ class AnnotationClosure private constructor(
                 // when all that is wanted here is annotation declarations. A read action that long
                 // either blocks the EDT or, if made cancellable, never survives to completion in a
                 // busy IDE.
-                val children = annotationTypesReferencing(helper, parent, scope, read)
+                val children = annotationTypesReferencing(project, helper, parent, scope, read)
                 for ((childFqn, child) in children) {
                     val grew = roots.getOrPut(childFqn) { HashSet() }.addAll(inherited)
                     val isNew = classes.put(childFqn, child) == null
@@ -149,7 +149,7 @@ class AnnotationClosure private constructor(
                 for (name in roots.keys.toList()) {
                     ProgressManager.checkCanceled()
                     val snapshot = roots.mapValues { it.value.toSet() }
-                    val discovered = read.compute {
+                    val discovered = read.compute(project) {
                         annotationTypesMentioning(helper, name, scope).mapNotNull { declaration ->
                             val simple = declaration.name ?: return@mapNotNull null
                             val inherited = declaration.modifierList?.annotations.orEmpty()
@@ -184,13 +184,14 @@ class AnnotationClosure private constructor(
          * bounded chunks so no single read action runs long.
          */
         private fun annotationTypesReferencing(
+            project: Project,
             helper: PsiSearchHelper,
             parent: PsiClass,
             scope: GlobalSearchScope,
             read: ScanRead,
         ): List<Pair<String, PsiClass>> {
-            val simpleName = read.compute { parent.name } ?: return emptyList()
-            val files = read.compute {
+            val simpleName = read.compute(project) { parent.name } ?: return emptyList()
+            val files = read.compute(project) {
                 ArrayList<PsiFile>().also { out ->
                     helper.processAllFilesWithWord(simpleName, scope, { out += it; true }, true)
                 }
@@ -198,7 +199,7 @@ class AnnotationClosure private constructor(
             val out = ArrayList<Pair<String, PsiClass>>()
             for (chunk in files.chunked(FILE_CHUNK)) {
                 ProgressManager.checkCanceled()
-                out += read.compute {
+                out += read.compute(project) {
                     chunk.flatMap { file ->
                         classesIn(file)
                             .filter { it.isAnnotationType }
