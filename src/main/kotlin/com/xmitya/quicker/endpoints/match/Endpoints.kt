@@ -51,9 +51,20 @@ fun splitSegments(path: String): List<String> {
     var depth = 0
     for (c in path) {
         when {
-            c == '{' -> { depth++; sb.append(c) }
-            c == '}' -> { if (depth > 0) depth--; sb.append(c) }
-            c == '/' && depth == 0 -> { if (sb.isNotEmpty()) { out += sb.toString(); sb.setLength(0) } }
+            c == '{' -> {
+                depth++
+                sb.append(c)
+            }
+            c == '}' -> {
+                if (depth > 0) depth--
+                sb.append(c)
+            }
+            c == '/' && depth == 0 -> {
+                if (sb.isNotEmpty()) {
+                    out += sb.toString()
+                    sb.setLength(0)
+                }
+            }
             else -> sb.append(c)
         }
     }

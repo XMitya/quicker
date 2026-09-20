@@ -6,8 +6,8 @@ import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.startup.ProjectActivity
-import kotlinx.coroutines.delay
 import com.xmitya.quicker.endpoints.settings.EndpointSettings
+import kotlinx.coroutines.delay
 
 /**
  * Builds the endpoint model once the project is open, so the first press of the shortcut is

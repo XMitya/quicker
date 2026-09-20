@@ -1,11 +1,13 @@
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 
 plugins {
     kotlin("jvm") version "2.1.21"
     id("org.jetbrains.intellij.platform")
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
+    id("org.jetbrains.kotlinx.kover") version "0.9.9"
 }
 
 group = "com.xmitya.quicker"
@@ -37,6 +39,32 @@ dependencies {
     // root; without it on the test classpath every fixture fails in setUp with "No roots for".
     testImplementation("org.jetbrains:annotations:24.0.0")
     testImplementation("org.assertj:assertj-core:3.27.3")
+}
+
+/**
+ * Coverage gate. The threshold covers the plugin's logic; three entry points are outside it because
+ * nothing about them is logic and none can be driven from a light fixture: the Swing popup, the
+ * settings form, and the headless harness that opens a project and ends in `exitProcess`. Excluding
+ * them keeps the number honest -- a gate that is only met by counting untestable UI would say
+ * nothing about the code that is tested.
+ */
+kover {
+    reports {
+        filters {
+            excludes {
+                classes(
+                    "com.xmitya.quicker.endpoints.ui.EndpointPopup*",
+                    "com.xmitya.quicker.endpoints.settings.EndpointConfigurable*",
+                    "com.xmitya.quicker.endpoints.diagnostic.*",
+                )
+            }
+        }
+        verify {
+            rule {
+                minBound(90)
+            }
+        }
+    }
 }
 
 intellijPlatform {
@@ -143,8 +171,10 @@ val dumpEndpoints by intellijPlatformTesting.runIde.registering {
             "-Xmx8g",
             "-Djava.awt.headless=true",
             "-Didea.log.console=true",
-            "-Dquicker.jdk=" + (providers.gradleProperty("jdkHome").orNull
-                ?: (System.getProperty("user.home") + "/.sdkman/candidates/java/21.0.2-tem")),
+            "-Dquicker.jdk=" + (
+                providers.gradleProperty("jdkHome").orNull
+                    ?: (System.getProperty("user.home") + "/.sdkman/candidates/java/21.0.2-tem")
+                ),
         )
     }
 }
@@ -176,6 +206,7 @@ val generateUpdatePluginsXml by tasks.registering {
             .newDocumentBuilder()
             .parse(descriptor.asFile)
             .documentElement
+
         // Direct children only: `id` and `name` also occur deeper in the descriptor.
         fun field(tag: String): String {
             val children = root.childNodes

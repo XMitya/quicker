@@ -73,10 +73,17 @@ Requires JDK 21. Everything else the Gradle wrapper fetches.
 
 ```bash
 ./gradlew buildPlugin     # -> build/distributions/quicker-<version>.zip
-./gradlew test            # 57 tests, no IDE needed for most
+./gradlew test            # 96 tests, no IDE needed for most
+./gradlew check           # tests + ktlint + the coverage gate
+./gradlew ktlintFormat    # fix what ktlint can fix by itself
+./gradlew koverHtmlReport # -> build/reports/kover/html/index.html
 ./gradlew runIde          # sandbox IDE with the plugin loaded
 ./gradlew verifyPlugin    # binary compatibility against the supported IDE range
 ```
+
+Coverage is gated at 90% of lines. The popup, the settings form and the headless dump harness are
+outside the measurement: they are entry points rather than logic, and none of them can be driven
+from a light fixture, so counting them would only dilute the number.
 
 Resolving the IntelliJ Platform needs access to JetBrains' repositories. On a network that requires
 a proxy, set it per machine — `GRADLE_OPTS="-Dhttps.proxyHost=… -Dhttps.proxyPort=…"` or

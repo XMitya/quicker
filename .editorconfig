@@ -1,0 +1,31 @@
+# Shared by the IDE formatter and ktlint, which reads its style from here rather than from Gradle.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+# The IDE's own Kotlin style, not ktlint's opinionated `ktlint_official`: the code is formatted by
+# IntelliJ and there is no reason for the two to disagree.
+ktlint_code_style = intellij_idea
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# Where a signature wraps is a deliberate choice here: parameters go one per line so each can carry
+# its own KDoc, and a long body expression starts on its own line. ktlint would join both back up
+# whenever they happen to fit, so it does not get a vote on signatures.
+ktlint_standard_class-signature = disabled
+ktlint_standard_function-signature = disabled
+
+[src/test/**/*.kt]
+# JUnit 3 style fixtures: the runner finds tests by the `test` prefix, and backticked sentences
+# read better than camel case. ktlint only makes this exception for annotation-based runners.
+ktlint_standard_function-naming = disabled
+
+[{*.yml,*.yaml,*.xml}]
+indent_style = space
+indent_size = 2

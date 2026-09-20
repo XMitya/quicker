@@ -1,15 +1,12 @@
 package com.xmitya.quicker.endpoints.ui
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.editor.CaretModel
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiManager
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.SearchTextField
@@ -164,12 +161,30 @@ class EndpointPopup(private val project: Project) {
         searchField.textEditor.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
                 when (e.keyCode) {
-                    KeyEvent.VK_DOWN -> { move(1); e.consume() }
-                    KeyEvent.VK_UP -> { move(-1); e.consume() }
-                    KeyEvent.VK_PAGE_DOWN -> { move(10); e.consume() }
-                    KeyEvent.VK_PAGE_UP -> { move(-10); e.consume() }
-                    KeyEvent.VK_ENTER -> { navigate(e.isShiftDown); e.consume() }
-                    KeyEvent.VK_ESCAPE -> { popup?.cancel(); e.consume() }
+                    KeyEvent.VK_DOWN -> {
+                        move(1)
+                        e.consume()
+                    }
+                    KeyEvent.VK_UP -> {
+                        move(-1)
+                        e.consume()
+                    }
+                    KeyEvent.VK_PAGE_DOWN -> {
+                        move(10)
+                        e.consume()
+                    }
+                    KeyEvent.VK_PAGE_UP -> {
+                        move(-10)
+                        e.consume()
+                    }
+                    KeyEvent.VK_ENTER -> {
+                        navigate(e.isShiftDown)
+                        e.consume()
+                    }
+                    KeyEvent.VK_ESCAPE -> {
+                        popup?.cancel()
+                        e.consume()
+                    }
                 }
             }
         })

@@ -18,7 +18,7 @@ class GoToEndpointAction : DumbAwareAction() {
         // Discovery runs off the annotation indexes, which are unavailable during indexing.
         if (DumbService.isDumb(project)) {
             DumbService.getInstance(project).showDumbModeNotification(
-                "Endpoint search is available once indexing finishes"
+                "Endpoint search is available once indexing finishes",
             )
             return
         }

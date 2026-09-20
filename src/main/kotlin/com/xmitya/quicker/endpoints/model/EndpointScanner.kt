@@ -5,16 +5,16 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.CommonClassNames
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFile
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
-import com.intellij.psi.search.PsiSearchHelper
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.PsiSearchHelper
 import com.xmitya.quicker.endpoints.match.EndpointInfo
 import com.xmitya.quicker.endpoints.match.EndpointKind
 import com.xmitya.quicker.endpoints.match.HttpVerb
@@ -147,7 +147,9 @@ class EndpointScanner(
         if (!isHandWrittenSource(vf)) return null
         if (type.mappingAnnotations(closure).isEmpty() &&
             type.methods.none { it.mappingAnnotations(closure).isNotEmpty() }
-        ) return null
+        ) {
+            return null
+        }
         return fqn to pointerTo(type)
     }
 
@@ -161,7 +163,12 @@ class EndpointScanner(
         val files = LinkedHashSet<PsiFile>()
         for (name in closure.simpleNames()) {
             ProgressManager.checkCanceled()
-            read { helper.processAllFilesWithWord(name, scope, { files += it; true }, true) }
+            read {
+                helper.processAllFilesWithWord(name, scope, {
+                    files += it
+                    true
+                }, true)
+            }
         }
         return files.toList()
     }
@@ -200,7 +207,6 @@ class EndpointScanner(
         )
         return Endpoint(info, locator)
     }
-
 
     private companion object {
         /**

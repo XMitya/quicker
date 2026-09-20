@@ -39,8 +39,10 @@ class EndpointModelService(private val project: Project) {
     private val snapshot = AtomicReference<Snapshot?>(null)
     private val building = AtomicBoolean(false)
     private val pending = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
+
     /** A scan is already waiting for indexing to finish; further requests join it. */
     private val waitingForSmart = AtomicBoolean(false)
+
     /** Consecutive scans abandoned because indexes went away; reset by any scan that completes. */
     private val indexFailures = AtomicInteger(0)
 

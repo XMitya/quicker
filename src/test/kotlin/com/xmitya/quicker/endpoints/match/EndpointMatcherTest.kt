@@ -111,8 +111,8 @@ class EndpointMatcherTest {
     @Test
     fun `exact segment outranks a longer segment that merely contains it`() {
         val result = rank(all, "v1/users")
-        val exact = result.indexOfFirst { it.endpoint == e4 }        // /api/v1/users
-        val kebab = result.indexOfFirst { it.endpoint == e10 }       // /api/v1/user-sessions/{id}
+        val exact = result.indexOfFirst { it.endpoint == e4 } // /api/v1/users
+        val kebab = result.indexOfFirst { it.endpoint == e10 } // /api/v1/user-sessions/{id}
         assertThat(exact).isGreaterThanOrEqualTo(0)
         assertThat(if (kebab < 0) Int.MAX_VALUE else kebab).isGreaterThan(exact)
     }

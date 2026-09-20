@@ -9,7 +9,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.PsiSearchHelper
-import com.intellij.psi.search.UsageSearchContext
 
 /**
  * The set of annotation types that mean "this declares an HTTP mapping", expanded transitively.
@@ -175,7 +174,10 @@ class AnnotationClosure private constructor(
             scope: GlobalSearchScope,
         ): List<PsiClass> {
             val files = ArrayList<PsiFile>()
-            helper.processAllFilesWithWord(name, scope, { files += it; true }, true)
+            helper.processAllFilesWithWord(name, scope, {
+                files += it
+                true
+            }, true)
             return files.flatMap { file -> classesIn(file).filter { it.isAnnotationType } }
         }
 
@@ -193,7 +195,10 @@ class AnnotationClosure private constructor(
             val simpleName = read.compute(project) { parent.name } ?: return emptyList()
             val files = read.compute(project) {
                 ArrayList<PsiFile>().also { out ->
-                    helper.processAllFilesWithWord(simpleName, scope, { out += it; true }, true)
+                    helper.processAllFilesWithWord(simpleName, scope, {
+                        out += it
+                        true
+                    }, true)
                 }
             }
             val out = ArrayList<Pair<String, PsiClass>>()
