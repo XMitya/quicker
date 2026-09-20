@@ -1,8 +1,8 @@
 package com.xmitya.quicker.endpoints.ui
 
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.application.ReadAction
 import com.xmitya.quicker.endpoints.model.RankedEndpoint
 
 object EndpointNavigator {

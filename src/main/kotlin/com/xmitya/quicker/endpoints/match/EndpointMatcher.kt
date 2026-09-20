@@ -79,7 +79,10 @@ class EndpointMatcher(
             for (i in 0 until m) {
                 val t = ts[offset + i]
                 val s = segMatch(t, qs[i], i)
-                if (s == 0.0) { sum = 0.0; break }
+                if (s == 0.0) {
+                    sum = 0.0
+                    break
+                }
                 if (t is Segment.Lit) literals++
                 sum += s
             }
@@ -89,16 +92,19 @@ class EndpointMatcher(
             // segment to have actually matched.
             if (sum > 0.0 && literals > 0) {
                 val run = sum / m
-                if (run > bestRun) { bestRun = run; bestOffset = offset }
+                if (run > bestRun) {
+                    bestRun = run
+                    bestOffset = offset
+                }
             }
         }
         if (bestOffset < 0) return 0
 
         val anchor = when {
-            bestOffset == 0 && m == n -> 1.00   // whole template
-            bestOffset == 0 -> 0.92             // prefix
-            bestOffset + m == n -> 0.88         // suffix — people remember the tail of a URL
-            else -> 0.80                        // floating
+            bestOffset == 0 && m == n -> 1.00 // whole template
+            bestOffset == 0 -> 0.92 // prefix
+            bestOffset + m == n -> 0.88 // suffix — people remember the tail of a URL
+            else -> 0.80 // floating
         }
         var a = 1000.0 * bestRun * anchor
 

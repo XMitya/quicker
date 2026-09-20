@@ -8,6 +8,7 @@ import com.intellij.psi.PsiExpression
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiVariable
+import com.xmitya.quicker.endpoints.match.HttpVerb
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UExpression
@@ -16,7 +17,6 @@ import org.jetbrains.uast.UPolyadicExpression
 import org.jetbrains.uast.UResolvable
 import org.jetbrains.uast.evaluateString
 import org.jetbrains.uast.toUElementOfType
-import com.xmitya.quicker.endpoints.match.HttpVerb
 
 /**
  * Turns mapping annotations into a path string and an HTTP verb.

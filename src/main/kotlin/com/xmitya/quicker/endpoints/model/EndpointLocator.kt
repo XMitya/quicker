@@ -1,5 +1,6 @@
 package com.xmitya.quicker.endpoints.model
 
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.JavaPsiFacade
@@ -32,6 +33,10 @@ class EndpointLocator(
 
     private fun resolveByName(project: Project): PsiElement? {
         if (classFqn.isEmpty()) return null
+        // A class lookup by name goes through the stub indexes, which throw while indexing runs.
+        // Navigation from a cached model then falls back to the offset -- approximate, but the
+        // alternative during indexing is an error dialog and no navigation at all.
+        if (DumbService.isDumb(project)) return null
         val cls = JavaPsiFacade.getInstance(project)
             .findClass(classFqn, GlobalSearchScope.allScope(project)) ?: return null
         val method = cls.findMethodsByName(methodName, true).firstOrNull() ?: return cls

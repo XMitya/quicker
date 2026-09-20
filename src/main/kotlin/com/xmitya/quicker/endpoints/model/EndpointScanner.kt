@@ -5,23 +5,23 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.CommonClassNames
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFile
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
-import com.intellij.psi.search.PsiSearchHelper
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.PsiSearchHelper
 import com.xmitya.quicker.endpoints.match.EndpointInfo
 import com.xmitya.quicker.endpoints.match.EndpointKind
 import com.xmitya.quicker.endpoints.match.HttpVerb
 import com.xmitya.quicker.endpoints.match.joinPath
 import com.xmitya.quicker.endpoints.match.parseSegments
 
-/** Builds the endpoint model from PSI. Must be called inside a read action. */
+/** Builds the endpoint model from PSI, taking its own read actions -- see [scan]. */
 class EndpointScanner(
     private val project: Project,
     /** Tests run on the EDT under the write-intent lock; see [ScanRead]. */
@@ -104,7 +104,7 @@ class EndpointScanner(
         }
     }
 
-    private fun <T> read(block: () -> T): T = reads.compute(block)
+    private fun <T> read(block: () -> T): T = reads.compute(project, block)
 
     private fun pointerTo(type: PsiClass): SmartPsiElementPointer<PsiClass> =
         pointers.createSmartPsiElementPointer(type)
@@ -147,7 +147,9 @@ class EndpointScanner(
         if (!isHandWrittenSource(vf)) return null
         if (type.mappingAnnotations(closure).isEmpty() &&
             type.methods.none { it.mappingAnnotations(closure).isNotEmpty() }
-        ) return null
+        ) {
+            return null
+        }
         return fqn to pointerTo(type)
     }
 
@@ -161,7 +163,12 @@ class EndpointScanner(
         val files = LinkedHashSet<PsiFile>()
         for (name in closure.simpleNames()) {
             ProgressManager.checkCanceled()
-            read { helper.processAllFilesWithWord(name, scope, { files += it; true }, true) }
+            read {
+                helper.processAllFilesWithWord(name, scope, {
+                    files += it
+                    true
+                }, true)
+            }
         }
         return files.toList()
     }
@@ -200,7 +207,6 @@ class EndpointScanner(
         )
         return Endpoint(info, locator)
     }
-
 
     private companion object {
         /**

@@ -25,8 +25,15 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Lint
+        run: ./gradlew ktlintCheck --stacktrace
+
       - name: Test
         run: ./gradlew test --stacktrace
+
+      # Runs against the tests above, so it costs little beyond reading their coverage data.
+      - name: Coverage gate
+        run: ./gradlew koverVerify koverHtmlReport --stacktrace
 
       - name: Build plugin
         run: ./gradlew buildPlugin --stacktrace
@@ -49,3 +56,10 @@ jobs:
         with:
           name: test-report
           path: build/reports/tests/test
+
+      - name: Upload coverage report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/reports/kover/html

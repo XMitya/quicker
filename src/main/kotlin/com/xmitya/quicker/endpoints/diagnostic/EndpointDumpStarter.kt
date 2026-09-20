@@ -9,10 +9,10 @@ import com.intellij.openapi.externalSystem.model.ProjectSystemId
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.module.ModuleManager
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.projectRoots.JavaSdk
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
-import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.roots.OrderRootType
@@ -21,8 +21,8 @@ import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.search.GlobalSearchScope
 import com.xmitya.quicker.endpoints.model.AnnotationClosure
-import com.xmitya.quicker.endpoints.model.SpringAnnotations
 import com.xmitya.quicker.endpoints.model.EndpointScanner
+import com.xmitya.quicker.endpoints.model.SpringAnnotations
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
@@ -121,15 +121,17 @@ class EndpointDumpStarter : ApplicationStarter {
             diagnose(project, modules)
 
             val scanStart = System.currentTimeMillis()
-            val endpoints = ReadAction.compute<List<String>, RuntimeException> {
-                EndpointScanner(project).scan().map {
-                    val i = it.info
-                    "${i.verb}\t${i.path}\t${i.controllerSimpleName}.${i.methodName}\t${i.kind}\t${i.moduleName}"
-                }
+            // Deliberately not inside a read action: the scanner takes its own, and each of them
+            // waits for smart mode. Nested inside an outer read action that wait could never end,
+            // because leaving dumb mode needs the write lock this thread would be holding shut.
+            // The mapping below touches no PSI -- an EndpointInfo is plain data.
+            val endpoints = EndpointScanner(project).scan().map {
+                val i = it.info
+                "${i.verb}\t${i.path}\t${i.controllerSimpleName}.${i.methodName}\t${i.kind}\t${i.moduleName}"
             }
             val scanMs = System.currentTimeMillis() - scanStart
 
-            log("scanned in ${scanMs} ms -> ${endpoints.size} endpoints")
+            log("scanned in $scanMs ms -> ${endpoints.size} endpoints")
             val sorted = endpoints.sorted()
             if (outFile != null) {
                 Path.of(outFile).toFile().writeText(sorted.joinToString("\n"))
@@ -197,11 +199,17 @@ class EndpointDumpStarter : ApplicationStarter {
             val firstModule = ModuleManager.getInstance(project).modules.firstOrNull { m ->
                 ModuleRootManager.getInstance(m).contentRoots.isNotEmpty()
             }
-            log("sample module: ${firstModule?.name} sdk=${firstModule?.let { ModuleRootManager.getInstance(it).sdk?.name }}")
+            log(
+                "sample module: ${firstModule?.name} sdk=${firstModule?.let {
+                    ModuleRootManager.getInstance(it).sdk?.name
+                }}",
+            )
 
             val closure = AnnotationClosure.build(project, all)
-            log("annotation closure: ${closure.size} (resolved=${closure.resolved}) -> " +
-                closure.annotations.mapNotNull { it.qualifiedName }.sorted().take(12))
+            log(
+                "annotation closure: ${closure.size} (resolved=${closure.resolved}) -> " +
+                    closure.annotations.mapNotNull { it.qualifiedName }.sorted().take(12),
+            )
             if (modules == 0) log("WARNING: no modules; the project was opened without its module graph")
         }
     }
@@ -216,6 +224,7 @@ class EndpointDumpStarter : ApplicationStarter {
         const val POLL_MS = 500L
         const val SETTLE_MS = 3000L
         const val STABLE_ROUNDS = 3
+
         // A Gradle import reports the root project long before the real module graph lands.
         const val MIN_MODULES = 5
         const val PREVIEW = 40

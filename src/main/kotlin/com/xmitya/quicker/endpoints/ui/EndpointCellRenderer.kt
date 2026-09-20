@@ -39,8 +39,11 @@ class EndpointCellRenderer : ColoredListCellRenderer<RankedEndpoint>() {
     private fun appendWithMatches(text: String, ranges: List<IntRange>?, unresolved: Boolean) {
         // A path still holding a ${property} placeholder is shown as-is, in italics, so it is
         // obvious why it will never match a concrete URL from a log.
-        val plain = if (unresolved) SimpleTextAttributes.GRAYED_ITALIC_ATTRIBUTES
-        else SimpleTextAttributes.REGULAR_ATTRIBUTES
+        val plain = if (unresolved) {
+            SimpleTextAttributes.GRAYED_ITALIC_ATTRIBUTES
+        } else {
+            SimpleTextAttributes.REGULAR_ATTRIBUTES
+        }
 
         if (ranges.isNullOrEmpty()) {
             append(text, plain)

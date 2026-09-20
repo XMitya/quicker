@@ -66,8 +66,11 @@ object SpringStubs {
             """.trimIndent(),
         )
         for ((simple, verb) in listOf(
-            "GetMapping" to "GET", "PostMapping" to "POST", "PutMapping" to "PUT",
-            "DeleteMapping" to "DELETE", "PatchMapping" to "PATCH",
+            "GetMapping" to "GET",
+            "PostMapping" to "POST",
+            "PutMapping" to "PUT",
+            "DeleteMapping" to "DELETE",
+            "PatchMapping" to "PATCH",
         )) {
             fixture.addFileToProject(
                 "org/springframework/web/bind/annotation/$simple.java",

@@ -16,8 +16,10 @@ data class EndpointQuery(
     enum class Mode {
         /** Query looked like a path — run structural alignment and fuzzy. */
         PATH,
+
         /** Whitespace-separated words — fuzzy only; structural alignment would be meaningless. */
         FUZZY,
+
         /** A single bare token — could be either, so try both. */
         BOTH,
     }
@@ -42,7 +44,7 @@ data class EndpointQuery(
                 }
             }
 
-            s = SCHEME.replace(s, "")          // scheme + authority
+            s = SCHEME.replace(s, "") // scheme + authority
             s = s.substringBefore('?').substringBefore('#')
             s = s.trim().trim('/')
 
