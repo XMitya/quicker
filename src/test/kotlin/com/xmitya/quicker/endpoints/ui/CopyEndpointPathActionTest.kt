@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.impl.NonBlockingReadActionImpl
 import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.util.IconLoader
 import com.intellij.testFramework.LightProjectDescriptor
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.TestActionEvent
@@ -18,6 +19,7 @@ import com.xmitya.quicker.endpoints.model.ResolvedPath
 import com.xmitya.quicker.endpoints.model.SpringStubs
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
+import java.awt.GraphicsEnvironment
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
 
@@ -106,12 +108,23 @@ class CopyEndpointPathActionTest : LightJavaCodeInsightFixtureTestCase() {
         assertThat(perform(CopyEndpointPathWithMethodAction())).isEqualTo("GET /api/v1/orders/{id}")
     }
 
-    /** Referenced by a path in plugin.xml, where a typo does not fail the build. */
+    /**
+     * Referenced by a path in plugin.xml, where a typo does not fail the build.
+     *
+     * Icon loading is switched off in a headless JVM, CI included: every icon then renders as a 1x1
+     * placeholder, which would say nothing about the file. It is switched on for the check, and
+     * back to the state a headless JVM starts in afterwards.
+     */
     fun `test both items carry the plugin icon at action size`() {
-        for (id in listOf("Quicker.CopyEndpointPath", "Quicker.CopyEndpointPathWithMethod")) {
-            val icon = ActionManager.getInstance().getAction(id)?.templatePresentation?.icon
-            assertThat(icon).describedAs(id).isNotNull()
-            assertThat(icon!!.iconWidth to icon.iconHeight).describedAs(id).isEqualTo(16 to 16)
+        IconLoader.activate()
+        try {
+            for (id in listOf("Quicker.CopyEndpointPath", "Quicker.CopyEndpointPathWithMethod")) {
+                val icon = ActionManager.getInstance().getAction(id)?.templatePresentation?.icon
+                assertThat(icon).describedAs(id).isNotNull()
+                assertThat(icon!!.iconWidth to icon.iconHeight).describedAs(id).isEqualTo(16 to 16)
+            }
+        } finally {
+            if (GraphicsEnvironment.isHeadless()) IconLoader.deactivate()
         }
     }
 
