@@ -27,7 +27,7 @@ The search field accepts:
 `Enter` navigates, `Shift+Enter` opens in a split.
 
 The reverse works too. Right-click a handler method, either in a controller or on an API interface,
-and the editor's context menu offers two items:
+and the editor's context menu offers two items under **Copy / Paste Special**:
 
 | Item | Copies |
 | --- | --- |
