@@ -101,4 +101,27 @@ class UnresolvedDependenciesTest : LightJavaCodeInsightFixtureTestCase() {
         )
         assertThat(scan()).contains("GET /dmp/v1/profile/me")
     }
+
+    /** Copying resolves by simple name too, like the scan: nothing on the handler resolves here. */
+    fun `test copied path with spring absent`() {
+        myFixture.addFileToProject(
+            "demo/src/main/java/demo/OrderController.java",
+            """
+            package demo;
+            import org.springframework.web.bind.annotation.*;
+            @RestController
+            @RequestMapping("/api/v1/orders")
+            public class OrderController {
+                @GetMapping("/{id}")
+                public String get<caret>Order(@PathVariable String id) { return null; }
+            }
+            """.trimIndent(),
+        )
+        myFixture.configureFromTempProjectFile("demo/src/main/java/demo/OrderController.java")
+        val resolver = EndpointPathResolver(project)
+        val handler = resolver.handlerAt(myFixture.file.findElementAt(myFixture.caretOffset)!!)
+        assertThat(handler).isNotNull()
+        assertThat(resolver.pathsOf(handler!!).map { "${it.verb} ${it.path}" })
+            .containsExactly("GET /api/v1/orders/{id}")
+    }
 }

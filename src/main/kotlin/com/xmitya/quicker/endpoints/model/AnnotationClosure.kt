@@ -130,15 +130,7 @@ class AnnotationClosure private constructor(
             read: ScanRead,
         ): AnnotationClosure {
             val roots = HashMap<String, MutableSet<String>>()
-            fun seed(name: String, root: String) {
-                roots.getOrPut(name.substringAfterLast('.')) { HashSet() } += root
-            }
-            SpringAnnotations.SEEDS.forEach { seed(it, it) }
-            seed("RestController", SpringAnnotations.CONTROLLER)
-            SpringAnnotations.SHORTHAND_VERBS.keys.forEach { seed(it, SpringAnnotations.REQUEST_MAPPING) }
-            SpringAnnotations.SHORTHAND_VERBS.keys
-                .filter { it.contains(".service.annotation.") }
-                .forEach { seed(it, SpringAnnotations.HTTP_EXCHANGE) }
+            nameSeeds().forEach { (name, seedRoots) -> roots[name] = seedRoots.toHashSet() }
 
             // Fixpoint over project-declared annotations: @AutoGatewayController is annotated
             // @RestController, so it inherits that root and becomes a mapping annotation itself.
@@ -165,6 +157,80 @@ class AnnotationClosure private constructor(
                 if (!grew) return@repeat
             }
             return AnnotationClosure(roots, emptyList(), resolved = false)
+        }
+
+        /**
+         * The closure restricted to the annotations present on [owners], found by walking *up* from
+         * each annotation to its meta-annotations rather than down from the seeds across the whole
+         * project.
+         *
+         * [build] has to go down: a scan needs every mapping annotation before it knows where to
+         * look, and that takes seconds on a monorepo. Resolving a single declaration needs only the
+         * annotations it actually carries, and following those upwards is a handful of resolves —
+         * cheap enough for an action's `update()`. It is also plain Spring semantics, so an
+         * annotation declared in a library jar counts too.
+         *
+         * Annotations whose class does not resolve fall back to the simple names Spring's own are
+         * written as, exactly like [buildByName]. Must be called inside a read action.
+         */
+        fun around(owners: Sequence<PsiModifierListOwner>): AnnotationClosure {
+            val byName = nameSeeds()
+            // Negative results are memoized too: every walk ends in java.lang.annotation.
+            val memo = HashMap<String, Set<String>>()
+            val visiting = HashSet<String>()
+
+            fun rootsOf(annotation: PsiAnnotation): Set<String> {
+                val reference = annotation.nameReferenceElement ?: return emptySet()
+                val cls = reference.resolve() as? PsiClass
+                if (cls == null) {
+                    val name = reference.referenceName ?: return emptySet()
+                    return byName[name].orEmpty().also { memo[name] = it }
+                }
+                val fqn = cls.qualifiedName ?: return emptySet()
+                memo[fqn]?.let { return it }
+                val found = when (fqn) {
+                    in SpringAnnotations.SEEDS -> setOf(fqn)
+                    // Terminal, as in buildResolved: shorthands are not walked there either.
+                    in SpringAnnotations.SHORTHAND_VERBS -> setOf(SpringAnnotations.REQUEST_MAPPING)
+                    else -> {
+                        // Meta-annotations cycle: @Documented is itself @Documented.
+                        if (!visiting.add(fqn)) return emptySet()
+                        try {
+                            cls.modifierList?.annotations.orEmpty().flatMapTo(HashSet()) { rootsOf(it) }
+                        } finally {
+                            visiting.remove(fqn)
+                        }
+                    }
+                }
+                memo[fqn] = found
+                return found
+            }
+
+            owners.forEach { owner -> owner.modifierList?.annotations?.forEach { rootsOf(it) } }
+            val roots = memo.filterValues { it.isNotEmpty() }
+            return AnnotationClosure(
+                roots,
+                emptyList(),
+                resolved = SpringAnnotations.SEEDS.any { it in roots },
+            )
+        }
+
+        /**
+         * The simple names Spring's own annotations are written as, and the seeds each stands for —
+         * the whole closure when no Spring class resolves.
+         */
+        private fun nameSeeds(): Map<String, Set<String>> {
+            val roots = HashMap<String, MutableSet<String>>()
+            fun seed(name: String, root: String) {
+                roots.getOrPut(name.substringAfterLast('.')) { HashSet() } += root
+            }
+            SpringAnnotations.SEEDS.forEach { seed(it, it) }
+            seed("RestController", SpringAnnotations.CONTROLLER)
+            SpringAnnotations.SHORTHAND_VERBS.keys.forEach { seed(it, SpringAnnotations.REQUEST_MAPPING) }
+            SpringAnnotations.SHORTHAND_VERBS.keys
+                .filter { it.contains(".service.annotation.") }
+                .forEach { seed(it, SpringAnnotations.HTTP_EXCHANGE) }
+            return roots
         }
 
         /** Annotation declarations in files that mention [name] at all. */

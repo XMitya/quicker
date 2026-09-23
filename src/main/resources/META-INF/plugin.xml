@@ -21,6 +21,12 @@
       worth a user's attention, newest first.
     -->
     <change-notes><![CDATA[
+      <b>0.2.0</b>
+      <ul>
+        <li>Copy Endpoint Path and Copy Endpoint Path with Method under Copy / Paste Special in the
+          editor's context menu: the full path of the handler method under the caret, resolved
+          through the API interface/implementation split.</li>
+      </ul>
       <b>0.1.3</b>
       <ul>
         <li>First JetBrains Marketplace release, under the MIT license.</li>
@@ -67,5 +73,23 @@
             <keyboard-shortcut keymap="$default" first-keystroke="control alt shift H"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta alt shift H"/>
         </action>
+
+        <!--
+          The reverse of Go to Endpoint. In the editor's Copy / Paste Special submenu, next to Copy
+          Reference; both items show only on a handler method.
+        -->
+        <group id="Quicker.CopyEndpointPathGroup">
+            <action id="Quicker.CopyEndpointPath"
+                    class="com.xmitya.quicker.endpoints.ui.CopyEndpointPathAction"
+                    icon="/icons/endpoint.svg"
+                    text="Copy Endpoint Path"
+                    description="Copy the full URL path this handler method serves, e.g. /api/v1/users/{id}"/>
+            <action id="Quicker.CopyEndpointPathWithMethod"
+                    class="com.xmitya.quicker.endpoints.ui.CopyEndpointPathWithMethodAction"
+                    icon="/icons/endpoint.svg"
+                    text="Copy Endpoint Path with Method"
+                    description="Copy the HTTP method and the full URL path this handler serves, e.g. GET /api/v1/users/{id}"/>
+            <add-to-group group-id="Copy.Paste.Special" anchor="after" relative-to-action="CopyReference"/>
+        </group>
     </actions>
 </idea-plugin>

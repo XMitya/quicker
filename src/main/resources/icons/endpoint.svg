@@ -1,0 +1,15 @@
+<!--
+  Action icon, light theme: the plugin icon (META-INF/pluginIcon.svg) at the 16x16 an action is
+  drawn at. A 40x40 SVG would be shown at 40x40 in a menu, so the same geometry is re-framed here
+  rather than referenced.
+
+  The viewBox crops the plugin icon's margin so the leaf fills the frame, and the strokes are thicker
+  in source units so they still come out at about 1.3px wide instead of thinning below one pixel.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="2 2 36 36">
+    <path d="M36.1 3.9 C36.1 24.6 25.8 36.1 13.1 36.1 C7.4 36.1 3.9 31.5 3.9 25.8 C3.9 14.3 16.6 3.9 36.1 3.9 Z"
+          fill="#6DB33F"/>
+    <path d="M9.4 31 C12.6 21.6 17.4 16.4 22.2 14.1"
+          fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="27" cy="12" r="4.5" fill="none" stroke="#fff" stroke-width="3"/>
+</svg>

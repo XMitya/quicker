@@ -196,7 +196,7 @@ class MappingResolver(private val project: Project, private val closure: Annotat
 }
 
 /** The declaration itself, then its hierarchy: superclasses and interfaces, nearest first. */
-private fun PsiModifierListOwner.withHierarchy(): Sequence<PsiModifierListOwner> = when (this) {
+internal fun PsiModifierListOwner.withHierarchy(): Sequence<PsiModifierListOwner> = when (this) {
     is PsiClass -> sequence {
         val seen = HashSet<String>()
         val queue = ArrayDeque<PsiClass>()

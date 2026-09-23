@@ -26,6 +26,25 @@ The search field accepts:
 
 `Enter` navigates, `Shift+Enter` opens in a split.
 
+The reverse works too. Right-click a handler method, either in a controller or on an API interface,
+and the editor's context menu offers two items under **Copy / Paste Special**:
+
+| Item | Copies |
+| --- | --- |
+| **Copy Endpoint Path** | `/api/v1/users/{id}/orders` |
+| **Copy Endpoint Path with Method** | `GET /api/v1/users/{id}/orders` |
+
+The copied path is fully assembled, the same way search sees it:
+- Constants and concatenation are folded.
+- The base path is taken from wherever it is declared.
+- For a method on an API interface, the base path comes from the controller that implements it,
+  even when that controller is in another module.
+- If several controllers implement the interface, you pick one from a list.
+- A bare `@RequestMapping` answers every verb, so it is copied without one.
+
+The path is resolved from the current source rather than from the search model, so it is correct
+even while the model is out of date.
+
 The model is built when a project opens, in the background once indexing has finished, so the first
 search is instant. Results are served while a rebuild runs rather than blocking.
 
@@ -73,7 +92,7 @@ Requires JDK 21. Everything else the Gradle wrapper fetches.
 
 ```bash
 ./gradlew buildPlugin     # -> build/distributions/quicker-<version>.zip
-./gradlew test            # 96 tests, no IDE needed for most
+./gradlew test            # 121 tests, no IDE needed for most
 ./gradlew check           # tests + ktlint + the coverage gate
 ./gradlew ktlintFormat    # fix what ktlint can fix by itself
 ./gradlew koverHtmlReport # -> build/reports/kover/html/index.html
