@@ -1,5 +1,6 @@
 package com.xmitya.quicker.endpoints.ui
 
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -103,6 +104,15 @@ class CopyEndpointPathActionTest : LightJavaCodeInsightFixtureTestCase() {
     fun `test copies the path with its method`() {
         openHandler()
         assertThat(perform(CopyEndpointPathWithMethodAction())).isEqualTo("GET /api/v1/orders/{id}")
+    }
+
+    /** Referenced by a path in plugin.xml, where a typo does not fail the build. */
+    fun `test both items carry the plugin icon at action size`() {
+        for (id in listOf("Quicker.CopyEndpointPath", "Quicker.CopyEndpointPathWithMethod")) {
+            val icon = ActionManager.getInstance().getAction(id)?.templatePresentation?.icon
+            assertThat(icon).describedAs(id).isNotNull()
+            assertThat(icon!!.iconWidth to icon.iconHeight).describedAs(id).isEqualTo(16 to 16)
+        }
     }
 
     /** `ANY` is not a verb anyone can send, and search would not accept it back either. */

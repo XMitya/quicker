@@ -92,7 +92,7 @@ Requires JDK 21. Everything else the Gradle wrapper fetches.
 
 ```bash
 ./gradlew buildPlugin     # -> build/distributions/quicker-<version>.zip
-./gradlew test            # 120 tests, no IDE needed for most
+./gradlew test            # 121 tests, no IDE needed for most
 ./gradlew check           # tests + ktlint + the coverage gate
 ./gradlew ktlintFormat    # fix what ktlint can fix by itself
 ./gradlew koverHtmlReport # -> build/reports/kover/html/index.html

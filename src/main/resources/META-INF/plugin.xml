@@ -81,10 +81,12 @@
         <group id="Quicker.CopyEndpointPathGroup">
             <action id="Quicker.CopyEndpointPath"
                     class="com.xmitya.quicker.endpoints.ui.CopyEndpointPathAction"
+                    icon="/icons/endpoint.svg"
                     text="Copy Endpoint Path"
                     description="Copy the full URL path this handler method serves, e.g. /api/v1/users/{id}"/>
             <action id="Quicker.CopyEndpointPathWithMethod"
                     class="com.xmitya.quicker.endpoints.ui.CopyEndpointPathWithMethodAction"
+                    icon="/icons/endpoint.svg"
                     text="Copy Endpoint Path with Method"
                     description="Copy the HTTP method and the full URL path this handler serves, e.g. GET /api/v1/users/{id}"/>
             <add-to-group group-id="Copy.Paste.Special" anchor="after" relative-to-action="CopyReference"/>
